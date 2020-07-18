@@ -2,7 +2,7 @@ package com.delloite.machine.vending;
 
 public enum Item {
 
-	PEPSI("Pepsi", 10), LAYS("Lays", 5), DAIRYMILK("DairyMilk", 40), ECLAIRS("Eclairs", 15);
+	PEPSI("Pepsi", 10), LAYS("Lays", 5), DAIRYMILK("DairyMilk", 5), ECLAIRS("Eclairs", 15);
 
 	private String itemName;
 	private int price;

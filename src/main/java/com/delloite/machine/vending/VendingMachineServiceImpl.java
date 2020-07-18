@@ -14,6 +14,7 @@ public class VendingMachineServiceImpl implements VendingMachineService {
 	private Map<Coin, Integer> cashInMachine = new HashMap<>();
 	int coinInSystem = 0;
 	List<Coin> change = null;
+	int count = 0;
 
 	public VendingMachineServiceImpl() {
 
@@ -47,43 +48,43 @@ public class VendingMachineServiceImpl implements VendingMachineService {
 
 	@Override
 	public VendingResponse calculateChange(Item item) {
-		//if(itemInventory.containsKey(item)) {
-		change=new ArrayList();
-		if (insertedCoin.getPrice() < item.getPrice()) {
-			return new VendingResponse("Selected item costs more than the inserted coin.Please collect your coin",
-					Arrays.asList(insertedCoin));
-		} else if (insertedCoin.getPrice() > item.getPrice()) {
-			if (coinInSystem < (item.getPrice() - insertedCoin.getPrice())) {
-				return new VendingResponse(
-						"Machine does not have enough money in it. Please collect your inserted Coin",
+		if (itemInventory.get(item) > 0) {
+			count = 0;
+			change = new ArrayList();
+			if (insertedCoin.getPrice() < item.getPrice()) {
+				return new VendingResponse("Selected item costs more than the inserted coin.Please collect your coin",
 						Arrays.asList(insertedCoin));
-			} else {
-				VendingResponse result = new VendingResponse();
-				List<Coin> dispenseChange = dispenseChange(insertedCoin.getPrice() - item.getPrice());
-				if (dispenseChange != null) {
-					result.setChange(dispenseChange);
-					result.setMessage("Enjoy your item");
-					result.setSelectedItem(item);
-					itemInventory.put(item, itemInventory.get(item) - 1);
-					cashInMachine.put(insertedCoin, cashInMachine.get(insertedCoin) + 1);
-					coinInSystem += insertedCoin.getPrice();
-				} else {
-					return new VendingResponse("Machine does not have change in it. Please Collect your inserted coin",
+			} else if (insertedCoin.getPrice() > item.getPrice()) {
+				if (coinInSystem < (item.getPrice() - insertedCoin.getPrice())) {
+					return new VendingResponse(
+							"Machine does not have enough money in it. Please collect your inserted Coin",
 							Arrays.asList(insertedCoin));
+				} else {
+					VendingResponse result = new VendingResponse();
+					List<Coin> dispenseChange = dispenseChange(insertedCoin.getPrice() - item.getPrice());
+					if (dispenseChange != null) {
+						result.setChange(dispenseChange);
+						result.setMessage("Enjoy your item");
+						result.setSelectedItem(item);
+						itemInventory.put(item, itemInventory.get(item) - 1);
+						cashInMachine.put(insertedCoin, cashInMachine.get(insertedCoin) + 1);
+						coinInSystem += insertedCoin.getPrice();
+					} else {
+						return new VendingResponse(
+								"Machine does not have change in it. Please Collect your inserted coin",
+								Arrays.asList(insertedCoin));
+					}
+					return result;
 				}
-				return result;
+			} else {
+				itemInventory.put(item, itemInventory.get(item) - 1);
+				cashInMachine.put(insertedCoin, cashInMachine.get(insertedCoin) + 1);
+				coinInSystem += insertedCoin.getPrice();
+				return new VendingResponse(null, item, "Enjoy your item");
 			}
 		} else {
-			itemInventory.put(item, itemInventory.get(item) - 1);
-			cashInMachine.put(insertedCoin, cashInMachine.get(insertedCoin) + 1);
-			coinInSystem += insertedCoin.getPrice();
-			return new VendingResponse(null, item, "Enjoy your item");
+			return new VendingResponse("Item not avilable", Arrays.asList(insertedCoin));
 		}
-//		}
-//		else {
-//			return new VendingResponse("Item not avilable",
-//					Arrays.asList(insertedCoin)); 
-//		}
 	}
 
 	private List<Coin> dispenseChange(int balance) {
@@ -93,13 +94,28 @@ public class VendingMachineServiceImpl implements VendingMachineService {
 				change.add(balanceCoin);
 				coinInSystem -= balanceCoin.getPrice();
 				cashInMachine.put(balanceCoin, cashInMachine.get(balanceCoin) - 1);
-				balance-=balanceCoin.getPrice();
+				balance -= balanceCoin.getPrice();
 			} else {
-				return null;
+				if (cashInMachine.get(balanceCoin) == 0 && count == 0) {
+					if (balanceCoin.getPrice() == Coin.DIME.getPrice() && cashInMachine.get(Coin.DIME) != 0) {
+						dispenseChange(5);
+						dispenseChange(5);
+						balance = 0;
+					} else if (balanceCoin.getPrice() == Coin.NICKLE.getPrice() || cashInMachine.get(Coin.NICKLE) != 0
+							|| balanceCoin.getPrice() < cashInMachine.get(Coin.NICKLE)) {
+						for (int i = 0; i < balanceCoin.getPrice(); i++) {
+							dispenseChange(1);
+						}
+						balance = 0;
+					}
+				} else {
+					return null;
+				}
+				count++;
+
 			}
 		}
 		return change;
 	}
-
 
 }
